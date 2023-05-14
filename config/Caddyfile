@@ -1,0 +1,49 @@
+(LOG) {
+  log {
+    output file /var/log/caddy/access.log {
+      roll_size 10mb
+      roll_keep 30
+      rool_keep_for 30d
+    }
+    format filter {
+      wrap json {
+        time_format "wall"
+        time_key "time"
+        time_local
+      }
+      fields {
+        user_id delete
+        duration delete
+        resp_headers delete
+        status delete
+        request>uri delete
+        request>remote_port delete
+        request>tls delete
+        request>method delete
+        request>headers>User-Agent delete
+        request>headers>Accept-Encoding delete
+        request>headers>Padding delete
+      }
+    }
+    level INFO
+  }
+}
+{
+  order forward_proxy before reverse_proxy
+  servers {
+    log_credentials
+  }
+}
+:443, #domain# {
+  tls #email#
+  import LOG
+  forward_proxy {
+    basic_auth #account#
+    hide_ip
+    hide_via
+    probe_resistance
+  }
+  reverse_proxy https://www.microsoft.com {
+    header_up Host {upstream_hostport}
+  }
+}
